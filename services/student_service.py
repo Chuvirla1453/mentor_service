@@ -92,3 +92,19 @@ class StudentService:
         if not request:
             logger.warning(f"Запрос с ID {request_id} не удалось найти.")
         return request
+
+    async def update_request(self, request_id: UUID, update_data: dict) -> None:
+        request = await self.request_repository.get_request_by_id(request_id)
+        if not request:
+            logger.warning(f"Запрос с id {request_id} не найден для обновления.")
+            raise ValueError("Запрос не найден")
+        await self.request_repository.update_request_fields(request_id, update_data)
+        logger.info(f"Запрос {request_id} обновлён: {update_data}")
+
+    async def delete_request(self, request_id: UUID) -> None:
+        request = await self.request_repository.get_request_by_id(request_id)
+        if not request:
+            logger.warning(f"Запрос с id {request_id} не найден для удаления.")
+            raise ValueError("Запрос не найден")
+        await self.request_repository.delete_request(request_id)
+        logger.info(f"Запрос {request_id} удалён.")

@@ -147,3 +147,39 @@ class MentorService:
         telegram = data.get("telegram")
         await self.mentor_repository.update_mentor_external_fields(mentor_id, about, specification, name, telegram)
         logger.info(f"Mentor {mentor_id} synced from external profile {external_user_id}")
+
+    async def update_mentor(self, mentor_id: UUID, telegram_id: str = None, name: str = None, info: str = None, about: str = None, specification: str = None) -> None:
+        """
+        Обновляет данные ментора (кроме id).
+        """
+        mentor = await self.mentor_repository.get_mentor_by_id(mentor_id)
+        if not mentor:
+            logger.warning(f"Ментор с id {mentor_id} не найден для обновления.")
+            raise ValueError("Ментор не найден")
+        update_data = {}
+        if telegram_id is not None:
+            update_data["telegram_id"] = telegram_id
+        if name is not None:
+            update_data["name"] = name
+        if info is not None:
+            update_data["info"] = info
+        if about is not None:
+            update_data["about"] = about
+        if specification is not None:
+            update_data["specification"] = specification
+        if not update_data:
+            logger.info(f"Нет данных для обновления ментора {mentor_id}")
+            return
+        await self.mentor_repository.mentor_update_fields(mentor_id, update_data)
+        logger.info(f"Ментор {mentor_id} обновлён: {update_data}")
+
+    async def delete_mentor(self, mentor_id: UUID) -> None:
+        """
+        Удаляет ментора по id.
+        """
+        mentor = await self.mentor_repository.get_mentor_by_id(mentor_id)
+        if not mentor:
+            logger.warning(f"Ментор с id {mentor_id} не найден для удаления.")
+            raise ValueError("Ментор не найден")
+        await self.mentor_repository.delete_mentor(mentor_id)
+        logger.info(f"Ментор {mentor_id} удалён.")

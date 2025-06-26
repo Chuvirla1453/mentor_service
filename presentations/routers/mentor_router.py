@@ -86,6 +86,14 @@ class MentorRespondRequest(BaseModel):
     response: int  # 1 — принять, -1 — отклонить
 
 
+class MentorUpdateRequest(BaseModel):
+    telegram_id: Optional[str] = None
+    name: Optional[str] = None
+    info: Optional[str] = None
+    about: Optional[str] = None
+    specification: Optional[str] = None
+
+
 @mentor_router.get("/", response_model=MentorGetAllResponse)
 async def get_all(user_id: UUID = Depends(extract_user_id)):
     """
@@ -348,4 +356,45 @@ async def respond_to_request(request_id: UUID, req: MentorRespondRequest, user_i
         return {"status": "ok"}
     except Exception as e:
         logger.error(f"Error responding to request: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@mentor_router.patch("/{mentor_id}")
+async def update_mentor(mentor_id: UUID, req: MentorUpdateRequest, user_id: UUID = Depends(extract_user_id)):
+    """
+    Обновить данные ментора (кроме id). Можно частично.
+    """
+    try:
+        logger.info(f"User {user_id} updating mentor {mentor_id} with {req.dict(exclude_unset=True)}")
+        await mentor_service.update_mentor(
+            mentor_id,
+            telegram_id=req.telegram_id,
+            name=req.name,
+            info=req.info,
+            about=req.about,
+            specification=req.specification
+        )
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"Mentor {mentor_id} not found for update")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating mentor: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@mentor_router.delete("/{mentor_id}")
+async def delete_mentor(mentor_id: UUID, user_id: UUID = Depends(extract_user_id)):
+    """
+    Удалить ментора по id.
+    """
+    try:
+        logger.info(f"User {user_id} deleting mentor {mentor_id}")
+        await mentor_service.delete_mentor(mentor_id)
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"Mentor {mentor_id} not found for delete")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error deleting mentor: {e}")
         raise HTTPException(status_code=400, detail=str(e))

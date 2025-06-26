@@ -1,6 +1,6 @@
 from infrastructure.db.connection import pg_connection
 from persistent.db.mentor import Mentor
-from sqlalchemy import insert, select, UUID, update, func
+from sqlalchemy import insert, select, UUID, update, func, delete
 from typing import cast, Optional
 
 
@@ -85,3 +85,15 @@ class MentorRepository:
             rows = resp.fetchall()
             mentors = [row[0] for row in rows]
             return mentors
+
+    async def delete_mentor(self, mentor_id: UUID) -> None:
+        stmp = delete(Mentor).where(Mentor.id == mentor_id)
+        async with self._sessionmaker() as session:
+            await session.execute(stmp)
+            await session.commit()
+
+    async def mentor_update_fields(self, mentor_id: UUID, update_data: dict) -> None:
+        stmp = update(Mentor).where(Mentor.id == mentor_id).values(**update_data)
+        async with self._sessionmaker() as session:
+            await session.execute(stmp)
+            await session.commit()

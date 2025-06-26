@@ -1,6 +1,6 @@
 from infrastructure.db.connection import pg_connection
 from persistent.db.request import Request
-from sqlalchemy import insert, select, update, UUID
+from sqlalchemy import insert, select, update, UUID, delete
 from datetime import datetime
 from persistent.db.request import Request
 from typing import cast, Optional
@@ -97,3 +97,15 @@ class RequestRepository:
                 if request.response != 0:
                     return True
             return False
+
+    async def update_request_fields(self, request_id: UUID, update_data: dict) -> None:
+        stmp = update(Request).where(cast("ColumnElement[bool]", Request.id == request_id)).values(**update_data)
+        async with self._sessionmaker() as session:
+            await session.execute(stmp)
+            await session.commit()
+
+    async def delete_request(self, request_id: UUID) -> None:
+        stmp = delete(Request).where(cast("ColumnElement[bool]", Request.id == request_id))
+        async with self._sessionmaker() as session:
+            await session.execute(stmp)
+            await session.commit()

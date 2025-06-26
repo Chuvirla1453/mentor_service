@@ -134,3 +134,19 @@ class MentorTimeService:
         Проверка занятости времени. True -- занято, False -- не занято.
         """
         return await self.request_repository.check_time_reservation(time=time, mentor_id=mentor_id)
+
+    async def update_mentor_time(self, mentor_time_id: UUID, update_data: dict) -> None:
+        mentor_time = await self.mentor_time_repository.get_mentor_time_by_id(mentor_time_id)
+        if not mentor_time:
+            logger.warning(f"Слот времени с id {mentor_time_id} не найден для обновления.")
+            raise ValueError("Слот времени не найден")
+        await self.mentor_time_repository.update_mentor_time_fields(mentor_time_id, update_data)
+        logger.info(f"Слот времени {mentor_time_id} обновлён: {update_data}")
+
+    async def delete_mentor_time(self, mentor_time_id: UUID) -> None:
+        mentor_time = await self.mentor_time_repository.get_mentor_time_by_id(mentor_time_id)
+        if not mentor_time:
+            logger.warning(f"Слот времени с id {mentor_time_id} не найден для удаления.")
+            raise ValueError("Слот времени не найден")
+        await self.mentor_time_repository.delete_mentor_time(mentor_time_id)
+        logger.info(f"Слот времени {mentor_time_id} удалён.")

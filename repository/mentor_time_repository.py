@@ -71,3 +71,9 @@ class MentorTimeRepository:
         async with self._sessionmaker() as session:
             await session.execute(stmp)
             await session.commit()
+
+    async def update_mentor_time_fields(self, mentor_time_id: UUID, update_data: dict) -> None:
+        stmp = update(MentorTime).where(MentorTime.id == mentor_time_id).values(**update_data)
+        async with self._sessionmaker() as session:
+            await session.execute(stmp)
+            await session.commit()

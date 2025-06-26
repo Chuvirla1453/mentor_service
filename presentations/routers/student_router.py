@@ -69,6 +69,15 @@ class GetRequestByIdGetResponse(BaseModel):
     response: int
 
 
+class RequestUpdateRequest(BaseModel):
+    call_type: Optional[bool] = None
+    mentor_id: Optional[UUID] = None
+    guest_id: Optional[UUID] = None
+    description: Optional[str] = None
+    call_time: Optional[datetime] = None
+    response: Optional[int] = None
+
+
 @student_router.get("/", response_model=RequestGetAllResponse)
 async def get_all(user_id: UUID = Depends(extract_user_id)):
     """
@@ -181,4 +190,38 @@ async def get_by_id(request_id: UUID, user_id: UUID = Depends(extract_user_id)):
         raise
     except Exception as e:
         logger.error(f"Error getting request by ID: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@student_router.patch("/{request_id}")
+async def update_request(request_id: UUID, req: RequestUpdateRequest, user_id: UUID = Depends(extract_user_id)):
+    """
+    Обновить данные запроса (request) по id. Можно частично.
+    """
+    try:
+        logger.info(f"User {user_id} updating request {request_id} with {req.dict(exclude_unset=True)}")
+        await student_service.update_request(request_id, req.dict(exclude_unset=True))
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"Request {request_id} not found for update")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating request: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@student_router.delete("/{request_id}")
+async def delete_request(request_id: UUID, user_id: UUID = Depends(extract_user_id)):
+    """
+    Удалить запрос по id.
+    """
+    try:
+        logger.info(f"User {user_id} deleting request {request_id}")
+        await student_service.delete_request(request_id)
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"Request {request_id} not found for delete")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error deleting request: {e}")
         raise HTTPException(status_code=400, detail=str(e))

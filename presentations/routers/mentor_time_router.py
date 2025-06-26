@@ -75,6 +75,13 @@ class CheckMentorTimeGetRequest(BaseModel):
     status: bool
 
 
+class MentorTimeUpdateRequest(BaseModel):
+    day: Optional[int] = None
+    time_start: Optional[time] = None
+    time_end: Optional[time] = None
+    mentor_id: Optional[UUID] = None
+
+
 @mentor_time_router.get("/", response_model=MentorTimeGetAllResponse)
 async def get_all(user_id: UUID = Depends(extract_user_id)):
     """
@@ -235,4 +242,38 @@ async def check_request(mentor_id: UUID, request_time: datetime, user_id: UUID =
         raise
     except Exception as e:
         logger.error(f"Error checking time reservation: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@mentor_time_router.patch("/{slot_id}")
+async def update_mentor_time(slot_id: UUID, req: MentorTimeUpdateRequest, user_id: UUID = Depends(extract_user_id)):
+    """
+    Обновить данные временного слота по id. Можно частично.
+    """
+    try:
+        logger.info(f"User {user_id} updating mentor_time {slot_id} with {req.dict(exclude_unset=True)}")
+        await mentor_time_service.update_mentor_time(slot_id, req.dict(exclude_unset=True))
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"MentorTime {slot_id} not found for update")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating mentor_time: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@mentor_time_router.delete("/{slot_id}")
+async def delete_mentor_time(slot_id: UUID, user_id: UUID = Depends(extract_user_id)):
+    """
+    Удалить временной слот по id.
+    """
+    try:
+        logger.info(f"User {user_id} deleting mentor_time {slot_id}")
+        await mentor_time_service.delete_mentor_time(slot_id)
+        return {"status": "ok"}
+    except ValueError as ve:
+        logger.warning(f"MentorTime {slot_id} not found for delete")
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error deleting mentor_time: {e}")
         raise HTTPException(status_code=400, detail=str(e))
